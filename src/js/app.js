@@ -7,6 +7,25 @@ import {
   APP_VERSION, buildExport, canShareFiles, docxFile, downloadFiles, entryTitle, REPORT_CSS, reportBody, setLogoData, shareFiles,
 } from './export.js';
 import { loadTemplate } from './docx.js';
+import { geologyText, loadGeology, lookupUnit } from './geo.js';
+
+// Forms with a location but no surficial geology text (e.g. started before the lookup existed)
+// get the mapped unit's description added before export, so the Word form is never left blank.
+async function ensureGeology(entries) {
+  const todo = entries.filter((e) => e.data.gps && !(e.data.geology || '').trim());
+  if (!todo.length) return;
+  let g;
+  try { g = await loadGeology(); } catch { return; }
+  for (const e of todo) {
+    const hit = lookupUnit(g, e.data.gps.lat, e.data.gps.lon);
+    const unit = e.data.geoUnit?.unit || hit?.unit;
+    if (!unit) continue;
+    e.data.geoUnit ||= { unit, source: 'map', share: hit ? +hit.share.toFixed(2) : null, at: new Date().toISOString() };
+    e.data.geology = e.data.geologyAuto = geologyText(g, unit);
+    e.updatedAt = new Date().toISOString();
+    await db.put(e);
+  }
+}
 
 async function loadTemplates(formIds) {
   const out = {};
@@ -241,6 +260,7 @@ async function exportScreen(ids) {
   if (!entries.length) return go('#/');
   let includeMedia = true;
   let result;
+  await ensureGeology(entries);
   const templates = await loadTemplates(entries.map((e) => e.formId));
 
   const info = h('div', { class: 'card pad' });

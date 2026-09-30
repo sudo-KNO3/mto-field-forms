@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.1 (2026-09-30)
+
+- Export fills in the surficial geology description for forms that have a location but an empty Surficial Geology section (e.g. forms started before 1.2.0).
+- Updates now apply the first time the app is opened with signal (previously it took a second launch).
+
 ## 1.2.0 (2026-09-30)
 
 - Location is recorded in **UTM (NAD83)**: GPS capture or manual zone/easting/northing entry. The Word form and CSV carry UTM (the CSV also has latitude/longitude).

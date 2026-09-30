@@ -5,7 +5,7 @@ import { FORMS, leafFields, visible } from './forms.js';
 import { fmtUTM, toUTM } from './geo.js';
 import { DOCX_MIME, fillDocument } from './docx.js';
 
-export const APP_VERSION = '1.2.0';
+export const APP_VERSION = '1.2.1';
 const MEDIA = new Set(['photos', 'sketch', 'signature']);
 
 const pad = (n) => String(n).padStart(2, '0');

@@ -16,7 +16,7 @@ The app is static files in `src/`. There is no build step. GitHub Pages hosts it
 2. If you added, renamed or removed a file under `src/`, update `SHELL` in `src/sw.js` and bump `CACHE` (`mto-forms-v1` → `v2`).
 3. Bump `APP_VERSION` in `src/js/export.js`, add a line to `CHANGELOG.md`, commit and push.
 
-Phones pick up the new version the next time the app opens with signal. The service worker refreshes in the background, and the update applies on the launch after that.
+Phones load the new version the first time the app is opened with signal (the list screen footer shows the version). Offline, the cached version is used.
 
 ## Changing a template
 
