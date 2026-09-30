@@ -16,7 +16,8 @@
 - **Sketch / Signature**: tap the box and draw with your finger. **Undo** and **Clear** are at the bottom. Tap **Done** to keep it.
 - **Pumping test**: tap **+ Add reading (now)** for each reading. It stamps the time; type the water level. **Now** re-stamps a row.
 - **Done** returns to the list. If a required field (marked \*) is empty, you can keep the form as a draft.
-- **Print / PDF** opens the paper-style version. In the print screen, tap **Share** to save it as a PDF.
+- **Word** creates this form's filled golden template right away, so you can preview it or send it on its own.
+- **Print / PDF** opens a quick paper-style view. In the print screen, tap **Share** to save it as a PDF.
 
 ## Sending to OneDrive (when you have signal)
 
@@ -32,7 +33,7 @@ Each export contains:
 | `MTO_export_<date>.json` | All data, raw. This is the master copy |
 | `MTO_SaltClaim_<date>.csv`, `MTO_PreconWellTest_<date>.csv` | One row per form. Opens in Excel |
 | `MTO_PumpingTest_<date>.csv` | Every pumping and recovery reading, one per row |
-| `<form>_<date>_<owner>_report.html` | Paper-style form. Open it and print to PDF |
+| `<form>_<date>_<owner>.docx` | **The golden template, filled in.** Open in Word; **File → Save as PDF** for the final copy |
 | `.jpg` / `.png` | Photos, sketches and signatures |
 
 ## Important

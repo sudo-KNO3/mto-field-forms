@@ -3,8 +3,9 @@
 
 import { FORMS, leafFields, visible } from './forms.js';
 import { fmtGps } from './fields.js';
+import { DOCX_MIME, fillDocument } from './docx.js';
 
-export const APP_VERSION = '1.0.0';
+export const APP_VERSION = '1.1.0';
 const MEDIA = new Set(['photos', 'sketch', 'signature']);
 
 const pad = (n) => String(n).padStart(2, '0');
@@ -46,12 +47,19 @@ function dataUrlToBlob(url) {
 const csvCell = (v) => (/[",\r\n]/.test(v) ? `"${String(v).replace(/"/g, '""')}"` : String(v));
 export const toCsv = (rows) => '﻿' + rows.map((r) => r.map(csvCell).join(',')).join('\r\n'); // BOM so Excel reads µ/° correctly
 
+// The filled golden template for one entry, as a Word file.
+export function docxFile(entry, template) {
+  return new File([fillDocument(template, entry)], `${entryBase(entry)}.docx`, { type: DOCX_MIME });
+}
+
 /**
  * Build all export files for the given entries.
+ * `templates` maps formId -> loaded template (see docx.js loadTemplate); forms
+ * without one are exported without a Word file.
  * Returns { files: File[], summary } — kept separate from sharing because iOS
  * only allows navigator.share() directly inside a tap, not after async work.
  */
-export function buildExport(entries, { includeMedia = true, includeReport = true } = {}) {
+export function buildExport(entries, { includeMedia = true, templates = {} } = {}) {
   const when = stamp();
   const files = [];
   const add = (name, content, type) => files.push(new File([content], name, { type }));
@@ -92,7 +100,7 @@ export function buildExport(entries, { includeMedia = true, includeReport = true
       }
       rows.push(row);
       jsonEntries.push({ id: e.id, form: formId, formTitle: form.title, template: form.template, status: e.complete ? 'complete' : 'draft', createdAt: e.createdAt, updatedAt: e.updatedAt, data });
-      if (includeReport) add(`${base}_report.html`, reportDocument(e), 'text/html');
+      if (templates[formId]) files.push(docxFile(e, templates[formId]));
     }
     add(`MTO_${slug(form.short).replace(/-/g, '')}_${when}.csv`, toCsv(rows), 'text/csv');
     if (readings.length > 1) add(`MTO_PumpingTest_${when}.csv`, toCsv(readings), 'text/csv');
@@ -201,10 +209,3 @@ export const REPORT_CSS = `
 .report .rf{margin-top:24px;font-size:8pt;color:#444;text-align:center}
 @media print{.report .pb{break-before:page}}
 `;
-
-export function reportDocument(entry) {
-  const form = FORMS[entry.formId];
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${esc(form.short)} - ${esc(entryTitle(entry))}</title><style>body{margin:.6in;background:#fff}@page{size:letter;margin:.75in}@media print{body{margin:0}}${REPORT_CSS}</style></head>
-<body><div class="report">${reportBody(entry)}</div></body></html>`;
-}

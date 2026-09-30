@@ -70,6 +70,27 @@ After a run of blank paragraphs, page 4 has a bold "Form 10" and then an embedde
 
 App treatment: numeric and time fields, a Reference Point choice, and two repeating tables. **+ Add reading (now)** stamps the current time and each row has a **Now** button, so readings can be logged in real time. There's no fixed row limit. Readings are also exported in long format (`MTO_PumpingTest_*.csv`) for Excel or charting.
 
+## Filled Word export
+
+`scripts/build_templates.py` turns each golden template into a fill-ready template (`src/templates/<form>.json`). It finds each printed label, scoped to its section heading, and puts a `{{tag}}` in the cell where a person would write. On the phone, `src/js/docx.js` fills the tags and writes a real `.docx`. The header logo, fonts, borders, page layout and page numbers all come from the original.
+
+| On paper | In the filled .docx |
+|---|---|
+| Blank underlined cell | Value typed on the line |
+| `_____` placeholder text | Value on a real underline, aligned with its label |
+| "A / B" to circle | All options printed; the chosen one **bold and boxed** |
+| Ruled lines | Text wrapped line by line onto the rules; overflow continues on the last line |
+| Sketch area | The sketch, scaled to fit; blank area kept if there's no sketch |
+| Form 10 (CorelDRAW picture) | Rebuilt as a native Word table in the same layout (Arial). The reading grid shows at least 30 rows and grows with more readings; its header repeats on following pages |
+| Signature line | Signature image |
+| (none) | App additions: a *GPS Coordinates* row under General, and a *Site Photographs* page at the end |
+
+Changes to the paper layout, all intentional:
+
+- Form 10 labels carry units ("Static Water Level (m)").
+- Page breaks before the sketch, Form 10 and Deviations pages are set as paragraph properties, so filled content can't create blank pages.
+- "Sign off by P.Geo. / P. Eng." shows the chosen designation boxed.
+
 ## App-only additions
 
 These are marked "· app" in the form and are not on the paper:

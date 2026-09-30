@@ -3,7 +3,7 @@
 // on the next launch after it has been online once.
 // Bump CACHE when the file list changes.
 
-const CACHE = 'mto-forms-v1';
+const CACHE = 'mto-forms-v2';
 const SHELL = [
   './',
   'index.html',
@@ -11,9 +11,12 @@ const SHELL = [
   'css/app.css',
   'js/app.js',
   'js/db.js',
+  'js/docx.js',
   'js/export.js',
   'js/fields.js',
   'js/forms.js',
+  'templates/salt.json',
+  'templates/precon.json',
   'icons/logo.png',
   'icons/icon-180.png',
   'icons/icon-192.png',

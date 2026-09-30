@@ -18,6 +18,13 @@ The app is static files in `src/`. There is no build step. GitHub Pages hosts it
 
 Phones pick up the new version the next time the app opens with signal. The service worker refreshes in the background, and the update applies on the launch after that.
 
+## Changing a template
+
+1. Replace the `.doc` in `templates/`. Open it in Word and use **Save As → Word Document (.docx)** into `templates/docx/` with the same name.
+2. Run `npm run templates`. The build stops with an error if a label it expects is no longer in the document.
+3. Run `npm test`. It fails if any app field has no place in the Word template.
+4. Bump `CACHE` in `src/sw.js` so phones pick up the new template.
+
 ## Local testing
 
 ```sh

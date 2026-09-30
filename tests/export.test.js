@@ -1,6 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { buildExport, entryBase, toCsv } from '../src/js/export.js';
+
+const templates = Object.fromEntries(['salt', 'precon'].map((id) => [id, JSON.parse(readFileSync(new URL(`../src/templates/${id}.json`, import.meta.url)))]));
 
 const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
 
@@ -27,8 +30,8 @@ test('entryBase is filesystem-safe', () => {
   assert.equal(entryBase(salt), 'SaltClaim_2026-09-30_Jane-Smith_aaaa');
 });
 
-test('buildExport produces json, per-form csv, pumping csv, images and reports', async () => {
-  const { files, summary } = buildExport([salt, precon]);
+test('buildExport produces json, per-form csv, pumping csv, images and Word files', async () => {
+  const { files, summary } = buildExport([salt, precon], { templates });
   const names = files.map((f) => f.name);
   assert.match(names[0], /^MTO_export_.*\.json$/);
   assert.ok(names.some((n) => /^MTO_SaltClaim_.*\.csv$/.test(n)));
@@ -36,7 +39,7 @@ test('buildExport produces json, per-form csv, pumping csv, images and reports',
   assert.ok(names.some((n) => /^MTO_PumpingTest_.*\.csv$/.test(n)));
   assert.ok(names.includes('SaltClaim_2026-09-30_Jane-Smith_aaaa_layoutSketch.png'));
   assert.ok(names.includes('SaltClaim_2026-09-30_Jane-Smith_aaaa_photos-2.png'));
-  assert.equal(names.filter((n) => n.endsWith('_report.html')).length, 2);
+  assert.equal(names.filter((n) => n.endsWith('.docx')).length, 2);
   assert.equal(summary.count, 2);
 
   const json = JSON.parse(await files[0].text());
@@ -53,7 +56,7 @@ test('buildExport produces json, per-form csv, pumping csv, images and reports',
   assert.match(csv, /"12 Concession Rd, ""North"""/);
 });
 
-test('buildExport can leave out media and reports', () => {
-  const { files } = buildExport([salt], { includeMedia: false, includeReport: false });
+test('buildExport can leave out media, and skips Word files without a template', () => {
+  const { files } = buildExport([salt], { includeMedia: false });
   assert.deepEqual(files.map((f) => f.name.split('_')[1]), ['export', 'SaltClaim']);
 });

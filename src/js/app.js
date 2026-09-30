@@ -4,8 +4,17 @@ import { FORMS, leafFields, visible } from './forms.js';
 import { db, newId, requestPersistence } from './db.js';
 import { h, renderField } from './fields.js';
 import {
-  APP_VERSION, buildExport, canShareFiles, downloadFiles, entryTitle, REPORT_CSS, reportBody, setLogoData, shareFiles,
+  APP_VERSION, buildExport, canShareFiles, docxFile, downloadFiles, entryTitle, REPORT_CSS, reportBody, setLogoData, shareFiles,
 } from './export.js';
+import { loadTemplate } from './docx.js';
+
+async function loadTemplates(formIds) {
+  const out = {};
+  for (const id of new Set(formIds)) {
+    try { out[id] = await loadTemplate(id); } catch { /* exported without a Word file */ }
+  }
+  return out;
+}
 
 const app = document.getElementById('app');
 const printRoot = document.getElementById('print');
@@ -197,6 +206,15 @@ async function editorScreen({ id, formId }) {
     go('#/');
   };
 
+  let template = null;
+  loadTemplate(form.id).then((t) => { template = t; }).catch(() => {});
+  const shareWord = () => {
+    if (!template) return alert('The Word template is still loading. Try again in a moment.');
+    const file = docxFile(entry, template); // built synchronously so the share stays inside the tap
+    if (canShareFiles([file])) shareFiles([file]).catch((err) => err.name !== 'AbortError' && alert('Share failed: ' + err.message));
+    else downloadFiles([file]);
+  };
+
   const print = () => {
     printRoot.innerHTML = `<div class="report">${reportBody(entry)}</div>`;
     window.print();
@@ -209,6 +227,7 @@ async function editorScreen({ id, formId }) {
       sections,
       h('div', { class: 'danger-zone' }, isNew ? null : h('button', { class: 'btn danger', text: 'Delete this form', onclick: remove }))),
     h('footer', { class: 'actions' },
+      h('button', { class: 'btn ghost', text: 'Word', onclick: shareWord }),
       h('button', { class: 'btn ghost', text: 'Print / PDF', onclick: print }),
       h('button', { class: 'btn primary', text: 'Done', onclick: done })));
   window.scrollTo(0, 0);
@@ -221,13 +240,14 @@ async function exportScreen(ids) {
   if (!entries.length) return go('#/');
   let includeMedia = true;
   let result;
+  const templates = await loadTemplates(entries.map((e) => e.formId));
 
   const info = h('div', { class: 'card pad' });
   const shareBtn = h('button', { class: 'btn primary big', text: 'Share / Save to OneDrive' });
   const markBtn = h('button', { class: 'btn ghost', text: 'Mark as exported without sharing' });
 
   const prepare = () => {
-    result = buildExport(entries, { includeMedia });
+    result = buildExport(entries, { includeMedia, templates });
     const { summary, files } = result;
     info.replaceChildren(
       h('p', {}, h('strong', { text: `${summary.count} form${summary.count > 1 ? 's' : ''}` }), ` → ${summary.files} files, ${fmtBytes(summary.bytes)}`),
@@ -272,7 +292,7 @@ async function exportScreen(ids) {
         h('input', { type: 'checkbox', checked: true, onchange: (e) => { includeMedia = e.target.checked; prepare(); } }),
         h('span', { text: 'Include photos, sketches & signatures as image files' })),
       info,
-      h('p', { class: 'muted small', text: 'The .json holds the raw data, the .csv files open in Excel, and each _report.html prints like the paper form (open it and choose Print → Save as PDF).' })),
+      h('p', { class: 'muted small', text: 'Each .docx is the golden template filled in, ready to open in Word and save as PDF. The .json holds the raw data and the .csv files open in Excel.' })),
     h('footer', { class: 'actions col' }, shareBtn, markBtn));
 }
 
