@@ -10,8 +10,8 @@ It's a Progressive Web App (PWA): static HTML/JS hosted on GitHub Pages and inst
 
 | Form | Template | Highlights |
 |---|---|---|
-| **Salt Claim** (Field Survey Documentation Sheet) | `templates/MTO Field Survey (Salt Claim).doc` | Conditional water-treatment blocks, property layout sketch |
-| **Precon Well Test** (Form 1 + Form 10) | `templates/MTO Preconstruction Well Testing Field Form - Template.doc` | Field chemistry readings, pumping and recovery test log, P.Geo./P.Eng. signature |
+| **Salt Claim Form** (Field Survey Documentation Sheet) | `templates/MTO Field Survey (Salt Claim).doc` | Conditional water-treatment blocks, property layout sketch |
+| **MTO Field Form** (Preconstruction Well Testing: Form 1 + Form 10) | `templates/MTO Preconstruction Well Testing Field Form - Template.doc` | Field chemistry readings, surficial soils dropdown, pumping and recovery test log, P.Geo./P.Eng. signature |
 
 [docs/template-analysis.md](docs/template-analysis.md) explains how each paper field maps to the app.
 

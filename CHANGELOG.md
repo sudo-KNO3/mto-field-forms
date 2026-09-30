@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.0 (2026-09-30)
+
+- Forms renamed **Salt Claim Form** and **MTO Field Form** (also in exported file names).
+- MTO Field Form: **Surficial soils** dropdown (Granular / Sandy soils; Fine grained soils; Limited overburden thickness / Bedrock) fills the Surficial Geology section.
+
 ## 1.2.1 (2026-09-30)
 
 - Export fills in the surficial geology description for forms that have a location but an empty Surficial Geology section (e.g. forms started before 1.2.0).

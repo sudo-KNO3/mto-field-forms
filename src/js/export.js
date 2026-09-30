@@ -5,7 +5,7 @@ import { FORMS, leafFields, visible } from './forms.js';
 import { fmtUTM, toUTM } from './geo.js';
 import { DOCX_MIME, fillDocument } from './docx.js';
 
-export const APP_VERSION = '1.2.1';
+export const APP_VERSION = '1.3.0';
 const MEDIA = new Set(['photos', 'sketch', 'signature']);
 
 const pad = (n) => String(n).padStart(2, '0');
@@ -20,7 +20,7 @@ export function entryTitle(entry) {
   return form.summary.map((k) => entry.data[k]).filter(Boolean).join(' · ') || 'Untitled';
 }
 
-// Base name shared by all files belonging to one entry, e.g. SaltClaim_2026-09-30_Smith_a1b2
+// Base name shared by all files belonging to one entry, e.g. SaltClaimForm_2026-09-30_Smith_a1b2
 export function entryBase(entry) {
   const form = FORMS[entry.formId];
   return `${slug(form.short).replace(/-/g, '')}_${entry.data.date || entry.createdAt.slice(0, 10)}_${slug(entry.data.owner)}_${entry.id.slice(0, 4)}`;

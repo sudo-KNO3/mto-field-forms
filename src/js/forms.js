@@ -1,6 +1,7 @@
 // Form definitions, transcribed from the Golden Templates (.doc) in section order.
 // Field types: text, textarea, date, time, number, tel, email, choice (circle one),
-// multi (circle any), location (UTM), geounit (mapped surficial unit), photos, sketch,
+// multi (circle any), location (UTM), geounit (mapped surficial unit), fillselect (dropdown
+// that writes its option into another field), photos, sketch,
 // signature, table (repeating rows). `docx: false` = app-only, not printed on the form.
 // `showIf` hides a field/group unless other fields match: {k, eq} / {k, has}, or an array of them.
 
@@ -63,9 +64,14 @@ const fieldChemistry = (readings = []) => ({
 const gps = { k: 'gps', label: 'Location (UTM, NAD83)', type: 'location', app: true };
 
 // Surficial Geology: unit looked up from the location on OGS Map 2556, then the pre-written description.
-const surficialGeology = (rows, extra = {}) => ({
+const surficialGeology = (rows, { soilSummary = false, ...extra } = {}) => ({
   title: 'Surficial Geology', ...extra,
   fields: [
+    ...(soilSummary ? [{
+      k: 'soilSummary', label: 'Surficial soils', type: 'fillselect', target: 'geology', docx: false,
+      options: ['Granular / Sandy soils', 'Fine grained soils', 'Limited overburden thickness / Bedrock'],
+      hint: 'Fills the Surficial Geology text below.',
+    }] : []),
     { k: 'geoUnit', label: 'Mapped surficial unit (OGS Map 2556)', type: 'geounit', app: true, docx: false },
     { k: 'geology', label: 'Surficial geology', type: 'textarea', rows, bare: true },
   ],
@@ -75,7 +81,7 @@ export const FORMS = {
   salt: {
     id: 'salt',
     title: 'Field Survey Documentation Sheet',
-    short: 'Salt Claim',
+    short: 'Salt Claim Form',
     template: 'MTO Field Survey (Salt Claim).doc',
     summary: ['owner', 'address'],
     pageNumbers: true,
@@ -171,7 +177,7 @@ export const FORMS = {
   precon: {
     id: 'precon',
     title: 'Form 1 - Field Survey Documentation Form',
-    short: 'Precon Well Test',
+    short: 'MTO Field Form',
     template: 'MTO Preconstruction Well Testing Field Form - Template.doc',
     summary: ['owner', 'location'],
     sections: [
@@ -209,7 +215,7 @@ export const FORMS = {
           { k: 'photos', label: 'Site photos', type: 'photos', app: true },
         ],
       },
-      surficialGeology(2, { pageBreak: true }),
+      surficialGeology(2, { pageBreak: true, soilSummary: true }),
       fieldChemistry([
         { k: 'conductivity', label: 'Conductivity (µS/cm)', type: 'number', half: true },
         { k: 'temperature', label: 'Temperature (°C)', type: 'number', half: true },

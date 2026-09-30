@@ -2,7 +2,7 @@
 // version is loaded; without signal the cached copy is used.
 // Bump CACHE when the file list changes.
 
-const CACHE = 'mto-forms-v4';
+const CACHE = 'mto-forms-v5';
 const SHELL = [
   './',
   'index.html',

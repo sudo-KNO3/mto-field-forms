@@ -9,12 +9,13 @@
 
 ## Filling out forms
 
-- Tap **New Salt Claim** or **New Precon Well Test**.
+- Tap **New Salt Claim Form** or **New MTO Field Form**.
 - Everything saves as you type. The top-right corner shows **Saved**. You can close the app at any time.
 - Tap a section heading to open or close it. The number on the right shows fields filled / total.
 - On-paper "circle one" choices are buttons. Tap to select; tap again to clear.
 - **Sketch / Signature**: tap the box and draw with your finger. **Undo** and **Clear** are at the bottom. Tap **Done** to keep it.
 - **Location**: tap **Capture GPS** (outdoors, give it a few seconds). The location is recorded in **UTM (NAD83)**. No GPS signal? Tap **Enter UTM** and type the zone, easting and northing.
+- **Surficial soils** (MTO Field Form): pick *Granular / Sandy soils*, *Fine grained soils* or *Limited overburden thickness / Bedrock* to write that into Surficial Geology. It won't be overwritten by the map lookup; use **Insert description** if you want the mapped unit's description instead.
 - **Surficial Geology** fills itself in from the location. The app looks up the unit on OGS Map 2556 and inserts the standard sentence and the unit description. **Check the small map**: the pink cross is the site. Read the unit number printed on the map there. If it's different, pick the right unit under **Change unit…**. A yellow note means the site is near a unit boundary or shoreline. You can edit the text freely afterwards.
 - **Pumping test**: tap **+ Add reading (now)** for each reading. It stamps the time; type the water level. **Now** re-stamps a row.
 - **Done** returns to the list. If a required field (marked \*) is empty, you can keep the form as a draft.
@@ -33,7 +34,7 @@ Each export contains:
 | File | What it is |
 |---|---|
 | `MTO_export_<date>.json` | All data, raw. This is the master copy |
-| `MTO_SaltClaim_<date>.csv`, `MTO_PreconWellTest_<date>.csv` | One row per form. Opens in Excel |
+| `MTO_SaltClaimForm_<date>.csv`, `MTO_MTOFieldForm_<date>.csv` | One row per form. Opens in Excel |
 | `MTO_PumpingTest_<date>.csv` | Every pumping and recovery reading, one per row |
 | `<form>_<date>_<owner>.docx` | **The golden template, filled in.** Open in Word; **File → Save as PDF** for the final copy |
 | `.jpg` / `.png` | Photos, sketches and signatures |

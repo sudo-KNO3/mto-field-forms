@@ -62,6 +62,30 @@ export function renderField(f, data, changed) {
     case 'location':
       return wrap(renderLocation(f, data, set), 'location-field');
 
+    case 'fillselect': {
+      // Dropdown whose choice becomes the text of another field (e.g. Surficial Geology).
+      const select = h('select', {
+        'aria-label': f.label,
+        onchange: (e) => {
+          const v = e.target.value;
+          const cur = (data[f.target] || '').trim();
+          const replaceable = !cur || cur === data[f.target + 'Auto'] || cur === data[f.k];
+          if (v && !replaceable && !confirm(`Replace the ${f.target === 'geology' ? 'surficial geology' : f.target} text with "${v}"?`)) {
+            e.target.value = data[f.k] || '';
+            return;
+          }
+          set(v);
+          if (v) {
+            data[f.target] = v;
+            const el = document.querySelector(`.field[data-k="${f.target}"] textarea, .field[data-k="${f.target}"] input`);
+            if (el) el.value = v;
+            changed(f.target);
+          }
+        },
+      }, h('option', { value: '', text: 'Choose…' }), ...f.options.map((o) => h('option', { value: o, text: o, selected: data[f.k] === o || null })));
+      return wrap(select, 'fillselect-field');
+    }
+
     case 'geounit':
       return wrap(renderGeoUnit(f, data, set, changed), 'geounit-field');
 
