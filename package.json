@@ -1,0 +1,15 @@
+{
+  "name": "mto-field-forms",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Offline iPhone web app (PWA) for the MTO field survey forms, with export to OneDrive.",
+  "type": "module",
+  "scripts": {
+    "start": "node scripts/serve.mjs",
+    "test": "node --test \"tests/*.test.js\"",
+    "icons": "powershell -ExecutionPolicy Bypass -File scripts/make-icons.ps1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
