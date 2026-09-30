@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.0 (2026-09-30)
+
+- Location is recorded in **UTM (NAD83)**: GPS capture or manual zone/easting/northing entry. The Word form and CSV carry UTM (the CSV also has latitude/longitude).
+- **Surficial geology from the location, offline.** The site's unit is looked up on OGS Map 2556 (1:1,000,000), bundled with the app. The report sentence and the pre-written unit description from the team's Quaternary Geology document are filled in automatically. The app shows the actual map around the site so the unit can be confirmed or changed.
+- Long free text in the Word form continues on added ruled lines, and form sections stay together on one page.
+
 ## 1.1.0 (2026-09-30)
 
 - Export now includes each form as its golden Word template filled in (.docx). Choices are boxed, sketches, signatures and photos are embedded, and Form 10 is rebuilt as a native table that grows with the readings. This replaces the HTML report file.

@@ -345,7 +345,7 @@ def build(form_id, spec):
         tc.append(el('p', None, tag_run(f'sketch:{key}:{n}')))
     placed.add(key)
 
-    # 4. GPS row (app addition) appended to the General table.
+    # 4. UTM location row (app addition) appended to the General table.
     general = next(p for p in paras if is_title(p) and para_text(p).upper() == 'GENERAL')
     gtbl = following_table(general)
     last = gtbl.findall(W + 'tr')[-1]
@@ -358,7 +358,7 @@ def build(form_id, spec):
     for c in list(lp):
         if c.tag != W + 'pPr':
             lp.remove(c)
-    t = el('t'); t.text = 'GPS Coordinates:'
+    t = el('t'); t.text = 'UTM (NAD83):'
     lp.append(el('r', None, t))
     set_cell(value_tc, 'text:gps')
     last.addnext(row)
@@ -386,6 +386,33 @@ def build(form_id, spec):
     if spec.get('form10'):
         build_form10(body, parts)
         placed.update(['staticWL', 'refPoint', 'casingExt', 'pumpStart', 'pumpStop', 'pumping', 'recovery'])
+
+    # 6a. Drop trailing empty lines inside labelled cells (e.g. "Services:" carries two), which make
+    #     un-splittable rows taller than needed and push them onto the next page on their own.
+    for tc in body.iter(W + 'tc'):
+        ps = tc.findall(W + 'p')
+        # (cells holding a nested table must keep the paragraph that closes them)
+        if len(ps) > 1 and para_text(ps[0]) and '{{' not in para_text(ps[0]) and tc.find(W + 'tbl') is None:
+            for p in reversed(ps[1:]):
+                if para_text(p) or p.find(f'.//{W}drawing') is not None:
+                    break
+                tc.remove(p)
+
+    # 6b. Keep each labelled section (heading + its table) on one page, so longer filled-in text
+    #     earlier in the form moves a whole section to the next page instead of splitting it.
+    #     Ruled free-text tables can grow with the text, so they are left free to break.
+    for head_p in [p for p in body.iter(W + 'p') if is_title(p) and para_text(p)]:
+        tbl = following_table(head_p)
+        if tbl is None or '{{line:' in etree.tostring(tbl, encoding='unicode'):
+            continue
+        rows = tbl.findall(W + 'tr')
+        for para in [head_p] + [p for r in rows[:-1] for p in r.iter(W + 'p')]:
+            ppr = para.find(W + 'pPr')
+            if ppr is None:
+                ppr = el('pPr'); para.insert(0, ppr)
+            if ppr.find(W + 'keepNext') is None:
+                # keepNext follows pStyle in the pPr sequence
+                ppr.insert(1 if ppr.find(W + 'pStyle') is not None else 0, el('keepNext'))
 
     # 7. Photo appendix placeholder, just before the final section properties.
     sect = body.find(W + 'sectPr')

@@ -37,14 +37,16 @@ test('salt: every tag is filled, values and circled choices land in the document
     data: {
       owner: 'Jane Smith & Sons', date: '2026-09-30', dugDrilled: 'Drilled', landUse: ['Residential'],
       statement: 'Water turned salty in spring. '.repeat(20), systemPresent: 'Yes', wtType: ['Water softener'], saltType: 'KCl',
-      layoutSketch: PNG, photos: [PNG], gps: { lat: 43.5, lon: -80.2, acc: 5 },
+      layoutSketch: PNG, photos: [PNG], gps: { lat: 43.65, lon: -79.38, acc: 5 },
     },
   };
   const zip = fillDocument(template('salt'), entry);
   const doc = readPart(zip, 'word/document.xml').toString('utf8');
   assert.ok(!doc.includes('{{'), 'no tags left');
   assert.ok(doc.includes('Jane Smith &amp; Sons'));
-  assert.ok(doc.includes('43.5, -80.2 (±5 m)'));
+  assert.ok(doc.includes('Zone 17T  630644 m E  4834275 m N (NAD83, ±5 m)'), 'location printed in UTM');
+  assert.ok(doc.includes('UTM (NAD83):'));
+  assert.ok((doc.match(/spring\./g) || []).length >= 20, 'long statement kept in full on added ruled lines');
   assert.match(doc, /<w:bdr [^>]*\/><\/w:rPr><w:t xml:space="preserve"> Drilled /);
   assert.match(doc, / KCl /);
   assert.ok(doc.includes('SITE PHOTOGRAPHS'));
@@ -71,7 +73,20 @@ test('every app field has a place in its Word template', async () => {
   const { FORMS, leafFields } = await import('../src/js/forms.js');
   for (const id of Object.keys(FORMS)) {
     const placed = new Set(template(id).placed);
-    const missing = leafFields(FORMS[id]).map((f) => f.k).filter((k) => !placed.has(k));
+    const missing = leafFields(FORMS[id]).filter((f) => f.docx !== false).map((f) => f.k).filter((k) => !placed.has(k));
     assert.deepEqual(missing, [], `${id}: add these to scripts/build_templates.py`);
   }
+});
+
+test('ruled rows in nested tables (Precon geology) grow without breaking the table XML', () => {
+  const entry = { id: 'cccc3333', formId: 'precon', createdAt: '2026-09-30T14:00:00Z', updatedAt: '2026-09-30T15:00:00Z',
+    data: { owner: 'A', location: 'B', geology: 'Silty clay till. '.repeat(40) } };
+  const doc = readPart(fillDocument(template('precon'), entry), 'word/document.xml').toString('utf8');
+  for (const tag of ['w:tbl', 'w:tr', 'w:tc', 'w:p']) {
+    const open = (doc.match(new RegExp(`<${tag}(?: [^>]*)?(?<!/)>`, 'g')) || []).length; // not self-closing
+    const close = (doc.match(new RegExp(`</${tag}>`, 'g')) || []).length;
+    assert.equal(open, close, `<${tag}> balanced`);
+  }
+  assert.ok((doc.match(/till\./g) || []).length >= 40);
+  assert.ok(!/<\/w:tbl><\/w:tc>/.test(doc), 'Word requires every table cell to end with a paragraph');
 });

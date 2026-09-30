@@ -1,6 +1,7 @@
 // Form definitions, transcribed from the Golden Templates (.doc) in section order.
 // Field types: text, textarea, date, time, number, tel, email, choice (circle one),
-// multi (circle any), gps, photos, sketch, signature, table (repeating rows).
+// multi (circle any), location (UTM), geounit (mapped surficial unit), photos, sketch,
+// signature, table (repeating rows). `docx: false` = app-only, not printed on the form.
 // `showIf` hides a field/group unless other fields match: {k, eq} / {k, has}, or an array of them.
 
 const wellDescription = (extra = []) => ({
@@ -59,7 +60,16 @@ const fieldChemistry = (readings = []) => ({
   ],
 });
 
-const gps = { k: 'gps', label: 'GPS location', type: 'gps', app: true };
+const gps = { k: 'gps', label: 'Location (UTM, NAD83)', type: 'location', app: true };
+
+// Surficial Geology: unit looked up from the location on OGS Map 2556, then the pre-written description.
+const surficialGeology = (rows, extra = {}) => ({
+  title: 'Surficial Geology', ...extra,
+  fields: [
+    { k: 'geoUnit', label: 'Mapped surficial unit (OGS Map 2556)', type: 'geounit', app: true, docx: false },
+    { k: 'geology', label: 'Surficial geology', type: 'textarea', rows, bare: true },
+  ],
+});
 
 export const FORMS = {
   salt: {
@@ -109,7 +119,7 @@ export const FORMS = {
       landUse(2),
       surfaceDrainage(3),
       septicBed,
-      { title: 'Surficial Geology', fields: [{ k: 'geology', label: 'Surficial geology', type: 'textarea', rows: 5, bare: true }] },
+      surficialGeology(5),
       {
         title: 'Water Treatment Systems',
         fields: [
@@ -199,7 +209,7 @@ export const FORMS = {
           { k: 'photos', label: 'Site photos', type: 'photos', app: true },
         ],
       },
-      { title: 'Surficial Geology', pageBreak: true, fields: [{ k: 'geology', label: 'Surficial geology', type: 'textarea', rows: 2, bare: true }] },
+      surficialGeology(2, { pageBreak: true }),
       fieldChemistry([
         { k: 'conductivity', label: 'Conductivity (µS/cm)', type: 'number', half: true },
         { k: 'temperature', label: 'Temperature (°C)', type: 'number', half: true },

@@ -2,10 +2,10 @@
 // and hands them to the iOS share sheet so they can be saved to OneDrive.
 
 import { FORMS, leafFields, visible } from './forms.js';
-import { fmtGps } from './fields.js';
+import { fmtUTM, toUTM } from './geo.js';
 import { DOCX_MIME, fillDocument } from './docx.js';
 
-export const APP_VERSION = '1.1.0';
+export const APP_VERSION = '1.2.0';
 const MEDIA = new Set(['photos', 'sketch', 'signature']);
 
 const pad = (n) => String(n).padStart(2, '0');
@@ -30,7 +30,8 @@ export function entryBase(entry) {
 export function displayValue(f, v) {
   if (v == null || v === '') return '';
   if (Array.isArray(v) && f.type === 'multi') return v.join('; ');
-  if (f.type === 'gps') return fmtGps(v);
+  if (f.type === 'location') return fmtUTM(v);
+  if (f.type === 'geounit') return `${v.unit}${v.source === 'user' ? ' (chosen by hand)' : ' (from map)'}`;
   if (f.type === 'table') return v.filter((r) => r.t || r.wl).map((r) => `${r.t || '?'} = ${r.wl || '?'}`).join('; ');
   return String(v);
 }
@@ -70,7 +71,10 @@ export function buildExport(entries, { includeMedia = true, templates = {} } = {
     const group = entries.filter((e) => e.formId === formId);
     if (!group.length) continue;
     const fields = leafFields(form);
-    const header = ['Entry ID', 'Form', 'Status', 'Created', 'Last edited', ...fields.map((f) => `${f.section}: ${f.label}`)];
+    // Location gets its own UTM columns so Excel/GIS can use the numbers directly.
+    const LOC_COLS = ['UTM zone', 'Easting (m)', 'Northing (m)', 'Datum', 'Accuracy (m)', 'Source', 'Latitude', 'Longitude'];
+    const header = ['Entry ID', 'Form', 'Status', 'Created', 'Last edited',
+      ...fields.flatMap((f) => (f.type === 'location' ? LOC_COLS.map((c) => `${f.section}: ${c}`) : [`${f.section}: ${f.label}`]))];
     const rows = [header];
     const readings = [['Entry ID', 'Owner', 'Location', 'Phase', 'Reading #', 'Time (hh:mm:ss)', 'Water Level']];
 
@@ -90,6 +94,9 @@ export function buildExport(entries, { includeMedia = true, templates = {} } = {
           });
           v = f.type === 'photos' ? names : names[0];
           row.push(names.join('; '));
+        } else if (f.type === 'location') {
+          const u = v ? v.utm || toUTM(v.lat, v.lon) : null;
+          row.push(...(u ? [`${u.zone}${u.band || ''}`, u.easting, u.northing, 'NAD83', v.acc ?? '', v.source || 'gps', v.lat, v.lon] : Array(8).fill('')));
         } else {
           row.push(displayValue(f, v));
         }

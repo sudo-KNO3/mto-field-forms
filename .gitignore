@@ -4,3 +4,5 @@ Thumbs.db
 ~$*
 *.tmp
 .vscode/
+__pycache__/
+*.pyc

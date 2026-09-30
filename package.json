@@ -8,6 +8,7 @@
     "start": "node scripts/serve.mjs",
     "test": "node --test \"tests/*.test.js\"",
     "templates": "python scripts/build_templates.py",
+    "geology": "python scripts/build_geology.py",
     "icons": "powershell -ExecutionPolicy Bypass -File scripts/make-icons.ps1"
   },
   "engines": {

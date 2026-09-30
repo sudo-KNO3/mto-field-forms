@@ -3,7 +3,7 @@
 // on the next launch after it has been online once.
 // Bump CACHE when the file list changes.
 
-const CACHE = 'mto-forms-v2';
+const CACHE = 'mto-forms-v3';
 const SHELL = [
   './',
   'index.html',
@@ -15,6 +15,9 @@ const SHELL = [
   'js/export.js',
   'js/fields.js',
   'js/forms.js',
+  'js/geo.js',
+  'geology/geology.json',
+  'geology/units.bin',
   'templates/salt.json',
   'templates/precon.json',
   'icons/logo.png',
@@ -23,8 +26,16 @@ const SHELL = [
   'icons/icon-512.png',
 ];
 
+// The geology map tiles are listed in geology.json; cache them all so the map works offline.
+async function precache() {
+  const cache = await caches.open(CACHE);
+  await cache.addAll(SHELL);
+  const meta = await (await cache.match('geology/geology.json')).json();
+  await cache.addAll(meta.tiles.present.map((t) => `geology/tiles/${t}.jpg`));
+}
+
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(precache().then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {

@@ -28,7 +28,7 @@ Source: `MTO Field Survey (Salt Claim).doc`. 4 pages, 10 tables, page break befo
 
 | # | Section | Paper layout | Fields |
 |---|---|---|---|
-| 1 | General | 5-row table; Owner and Date share row 1 | Property Owner\*, Date\*, AEC Project Number, Address, Telephone, Email (+ GPS, app-only) |
+| 1 | General | 5-row table; Owner and Date share row 1 | Property Owner\*, Date\*, AEC Project Number, Address, Telephone, Email (+ UTM location, app-only) |
 | 2 | Background | 2 rows, then 6 indented sub-rows under "Prior investigations" | Purchased property, Prior investigations → Company, Number of samples, Quantity/Quality Issues, Drink water? **Y/N**, Is water tested?, Number of residents |
 | 3 | Property Owner's Statement | 6 ruled lines | Free text (6 rows) |
 | 4 | Field Chemistry Data | 5 rows | Colour/Clarity, Odour?, Sediment?, Location, **Raw/Filtered** |
@@ -46,7 +46,7 @@ Source: `MTO Preconstruction Well Testing Field Form - Template.doc`. 5 pages, 1
 
 | # | Section | Differences from Form A |
 |---|---|---|
-| 1 | General | Location\*, Project, Owner\*, Date\*, Person Interviewed, Email, Telephone (+ GPS) |
+| 1 | General | Location\*, Project, Owner\*, Date\*, Person Interviewed, Email, Telephone (+ UTM location) |
 | 2 | Background | Owned/Tenant since, Current problems?, Water use (# residents), Prior investigations / routine testing? |
 | 3 | Property Owner's Statement | 11 ruled lines |
 | 4 | Well Description | Same grid, without Testing/Problems/Misc |
@@ -83,7 +83,8 @@ App treatment: numeric and time fields, a Reference Point choice, and two repeat
 | Sketch area | The sketch, scaled to fit; blank area kept if there's no sketch |
 | Form 10 (CorelDRAW picture) | Rebuilt as a native Word table in the same layout (Arial). The reading grid shows at least 30 rows and grows with more readings; its header repeats on following pages |
 | Signature line | Signature image |
-| (none) | App additions: a *GPS Coordinates* row under General, and a *Site Photographs* page at the end |
+| (none) | App additions: a *UTM (NAD83)* row under General, and a *Site Photographs* page at the end |
+| Surficial Geology ruled lines | The standard sentence and pre-written description for the unit mapped at the site ([geology.md](geology.md)); extra ruled lines are added when the text is long |
 
 Changes to the paper layout, all intentional:
 
@@ -95,7 +96,8 @@ Changes to the paper layout, all intentional:
 
 These are marked "· app" in the form and are not on the paper:
 
-- **GPS location** (General). Captures lat/lon and accuracy.
+- **Location** (General), recorded in UTM (NAD83) from GPS or typed in.
+- **Mapped surficial unit** (Surficial Geology). Looked up offline on OGS Map 2556 and confirmed by the tech; it fills the geology text.
 - **Site photos** (with each sketch). Resized to at most 1600 px so storage stays small.
 
 ## Judgement calls to confirm

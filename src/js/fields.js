@@ -1,3 +1,5 @@
+import { drawMapCrop, fmtUTM, fromUTM, geologyText, loadGeology, lookupUnit, toUTM, unitInfo } from './geo.js';
+
 // DOM builders for each field type. Every widget writes straight into `data[k]`
 // and then calls `changed()` so the editor can autosave and re-check visibility.
 
@@ -57,32 +59,11 @@ export function renderField(f, data, changed) {
       return wrap(box);
     }
 
-    case 'gps': {
-      const out = h('span', { class: 'gps-out' });
-      const paint = () => {
-        const g = data[f.k];
-        out.replaceChildren(g
-          ? h('a', { href: `https://maps.apple.com/?ll=${g.lat},${g.lon}&q=Site`, target: '_blank', text: fmtGps(g) })
-          : 'Not captured');
-      };
-      const btn = h('button', {
-        type: 'button', class: 'btn small', text: 'Capture',
-        onclick: () => {
-          if (!navigator.geolocation) return alert('Location is not available on this device.');
-          btn.disabled = true; btn.textContent = 'Locating…';
-          navigator.geolocation.getCurrentPosition((p) => {
-            set({ lat: +p.coords.latitude.toFixed(6), lon: +p.coords.longitude.toFixed(6), acc: Math.round(p.coords.accuracy), at: new Date().toISOString() });
-            paint(); btn.disabled = false; btn.textContent = 'Re-capture';
-          }, (err) => {
-            alert('Could not get location: ' + err.message);
-            btn.disabled = false; btn.textContent = 'Capture';
-          }, { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 });
-        },
-      });
-      if (data[f.k]) btn.textContent = 'Re-capture';
-      paint();
-      return wrap(h('div', { class: 'row' }, out, btn));
-    }
+    case 'location':
+      return wrap(renderLocation(f, data, set), 'location-field');
+
+    case 'geounit':
+      return wrap(renderGeoUnit(f, data, set, changed), 'geounit-field');
 
     case 'photos': {
       const grid = h('div', { class: 'thumbs' });
@@ -172,7 +153,7 @@ function renderTable(f, data, changed) {
 }
 
 export const nowTime = () => new Date().toTimeString().slice(0, 8);
-export const fmtGps = (g) => `${g.lat}, ${g.lon} (±${g.acc} m)`;
+export const fmtGps = fmtUTM;
 
 // Resize photos so a day of field work doesn't fill the phone's browser storage.
 async function compressImage(file, max = 1600, quality = 0.8) {
@@ -276,4 +257,162 @@ function drawPad({ title, signature, base }) {
     }
     redraw();
   });
+}
+
+// ---------- location (recorded in UTM) ----------
+
+// Other widgets (the geology lookup) listen here for changes to a field.
+export const fieldEvents = new EventTarget();
+
+function renderLocation(f, data, set) {
+  const out = h('div', { class: 'utm-out' });
+  const manual = h('div', { class: 'utm-manual', hidden: true });
+  const paint = () => {
+    const g = data[f.k];
+    if (!g) { out.replaceChildren(h('span', { class: 'muted', text: 'Not recorded' })); return; }
+    const u = g.utm || toUTM(g.lat, g.lon);
+    out.replaceChildren(
+      h('div', { class: 'utm-main' },
+        h('span', {}, h('small', { text: 'Zone ' }), `${u.zone}${u.band || ''}`),
+        h('span', {}, `${u.easting}`, h('small', { text: ' m E' })),
+        h('span', {}, `${u.northing}`, h('small', { text: ' m N' }))),
+      h('div', { class: 'utm-sub muted' },
+        `NAD83${g.acc != null ? ` · ±${g.acc} m` : ''} · ${g.source === 'manual' ? 'entered by hand' : 'GPS'}`,
+        g.at ? ` · ${new Date(g.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : '',
+        ' · ', h('a', { href: `https://maps.apple.com/?ll=${g.lat},${g.lon}&q=Site`, target: '_blank', text: 'map' })));
+  };
+  const btn = h('button', {
+    type: 'button', class: 'btn small', text: data[f.k] ? 'Re-capture GPS' : 'Capture GPS',
+    onclick: () => {
+      if (!navigator.geolocation) return alert('Location is not available on this device.');
+      btn.disabled = true; btn.textContent = 'Locating…';
+      navigator.geolocation.getCurrentPosition((p) => {
+        const lat = +p.coords.latitude.toFixed(7);
+        const lon = +p.coords.longitude.toFixed(7);
+        set({ lat, lon, acc: Math.round(p.coords.accuracy), at: new Date().toISOString(), source: 'gps', utm: toUTM(lat, lon) });
+        paint(); btn.disabled = false; btn.textContent = 'Re-capture GPS';
+      }, (err) => {
+        alert('Could not get location: ' + err.message + '\nYou can enter the UTM coordinates by hand instead.');
+        btn.disabled = false; btn.textContent = 'Capture GPS';
+      }, { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 });
+    },
+  });
+  // Manual UTM entry (e.g. read off a handheld GPS or a site plan).
+  const cur = data[f.k]?.utm || {};
+  const zone = h('input', { type: 'text', inputmode: 'numeric', value: cur.zone ?? 17, 'aria-label': 'UTM zone' });
+  const east = h('input', { type: 'text', inputmode: 'numeric', value: cur.easting ?? '', placeholder: 'e.g. 563412', 'aria-label': 'Easting' });
+  const north = h('input', { type: 'text', inputmode: 'numeric', value: cur.northing ?? '', placeholder: 'e.g. 4821345', 'aria-label': 'Northing' });
+  const applyManual = () => {
+    const z = +zone.value; const e = +east.value; const n = +north.value;
+    if (!(z >= 15 && z <= 18) || !(e > 100000 && e < 900000) || !(n > 4500000 && n < 6500000)) return; // Ontario ranges
+    const { lat, lon } = fromUTM(z, e, n);
+    set({ lat: +lat.toFixed(7), lon: +lon.toFixed(7), at: new Date().toISOString(), source: 'manual', utm: { ...toUTM(lat, lon, z), easting: e, northing: n } });
+    paint();
+  };
+  [zone, east, north].forEach((i) => i.addEventListener('input', applyManual));
+  manual.append(
+    h('label', {}, h('small', { text: 'Zone' }), zone),
+    h('label', {}, h('small', { text: 'Easting (m)' }), east),
+    h('label', {}, h('small', { text: 'Northing (m)' }), north));
+  const toggle = h('button', { type: 'button', class: 'btn small ghost', text: 'Enter UTM', onclick: () => { manual.hidden = !manual.hidden; } });
+  paint();
+  return h('div', {}, out, h('div', { class: 'row' }, btn, toggle), manual);
+}
+
+// ---------- mapped surficial unit (offline lookup on OGS Map 2556) ----------
+
+function renderGeoUnit(f, data, set, changed) {
+  const box = h('div', { class: 'geo' });
+  const canvas = h('canvas', { class: 'geo-map', width: 640, height: 400, 'aria-label': 'OGS Map 2556 around the site' });
+  let zoom = 1.5;
+  let g = null;
+  let hit = null;
+
+  const setGeologyText = (text) => {
+    data.geology = text;
+    data.geologyAuto = text;
+    const ta = document.querySelector('.field[data-k="geology"] textarea');
+    if (ta) ta.value = text;
+    changed('geology');
+  };
+  // Fill the description when it is empty or still the previous automatic text.
+  const autoFill = (unit) => {
+    if (!data.geology || data.geology === data.geologyAuto) setGeologyText(geologyText(g, unit));
+  };
+  const choose = (unit, source) => {
+    set({ unit, source, share: hit && hit.unit === unit ? +hit.share.toFixed(2) : null, at: new Date().toISOString() });
+    autoFill(unit);
+    paint();
+  };
+  const draw = () => drawMapCrop(g, canvas, hit.scan.x, hit.scan.y, zoom);
+
+  const paint = () => {
+    const cur = data[f.k];
+    const loc = data.gps;
+    const parts = [];
+    if (!g) {
+      parts.push(h('p', { class: 'muted', text: 'Loading map…' }));
+    } else if (!loc && !cur) {
+      parts.push(h('p', { class: 'muted', text: 'Record the location (General section) to look up the mapped unit, or choose it below.' }));
+    } else if (loc && !hit) {
+      parts.push(h('p', { class: 'geo-note warn', text: 'This location is outside Map 2556 (southern Ontario sheet). Choose the unit below.' }));
+    }
+    const unit = cur?.unit;
+    const info = unit && g ? unitInfo(g, unit) : null;
+    if (info) {
+      parts.push(h('div', { class: 'geo-unit' }, h('span', { class: 'geo-num', text: unit }), h('strong', { text: info.title })));
+      if (info.legend) parts.push(h('p', { class: 'geo-legend', text: info.legend }));
+    }
+    if (hit) {
+      if (cur?.source === 'user' && cur.unit !== hit.unit) {
+        parts.push(h('p', { class: 'geo-note', text: `Chosen by hand. The map colour at this point suggests ${hit.unit} – ${unitInfo(g, hit.unit).title}.` }));
+      } else if (!hit.certain) {
+        const others = hit.mix.filter((m) => m.unit !== hit.unit && m.share >= 0.1).slice(0, 2)
+          .map((m) => `${m.unit} – ${unitInfo(g, m.unit).title} (${Math.round(m.share * 100)}%)`);
+        const why = hit.nearShore ? 'the point is on a shoreline' : hit.weakColour ? 'the map colour here is a weak match to the legend' : 'the point is near a unit boundary';
+        parts.push(h('p', { class: 'geo-note warn', text: `Check the map below: ${why}${others.length ? `. Nearby: ${others.join('; ')}` : ''}. Read the unit number printed on the map and change it below if needed.` }));
+      } else {
+        parts.push(h('p', { class: 'geo-note ok', text: `Matched from the map colour (${Math.round(hit.share * 100)}% of the area within 1 km). Confirm against the unit number printed on the map.` }));
+      }
+    }
+    if (info?.confidence) parts.push(h('p', { class: 'geo-note', text: `The description for this unit is marked "${info.confidence}" in the source document.` }));
+    if (hit) {
+      parts.push(canvas, h('div', { class: 'row geo-zoom' },
+        h('button', { type: 'button', class: 'btn small ghost', text: '−', 'aria-label': 'Zoom out', onclick: () => { zoom = Math.max(0.5, zoom / 1.5); draw(); } }),
+        h('button', { type: 'button', class: 'btn small ghost', text: '+', 'aria-label': 'Zoom in', onclick: () => { zoom = Math.min(4, zoom * 1.5); draw(); } }),
+        h('small', { class: 'muted', text: 'OGS Map 2556 (1:1,000,000)' })));
+    }
+    if (g) {
+      const select = h('select', {
+        'aria-label': 'Surficial unit',
+        onchange: (e) => { if (e.target.value) choose(+e.target.value, 'user'); },
+      }, h('option', { value: '', text: unit ? 'Change unit…' : 'Choose unit…' }),
+      ...Object.keys(g.meta.units).map(Number).filter((u) => u <= 32).sort((p, q) => p - q)
+        .map((u) => h('option', { value: u, text: `${u} – ${g.meta.units[u].title}` })));
+      parts.push(h('div', { class: 'row geo-actions' }, select,
+        unit ? h('button', {
+          type: 'button', class: 'btn small', text: 'Insert description',
+          onclick: () => {
+            if (data.geology && data.geology !== data.geologyAuto && !confirm('Replace the surficial geology text with the description for this unit?')) return;
+            setGeologyText(geologyText(g, unit));
+          },
+        }) : null));
+    }
+    box.replaceChildren(...parts);
+    if (hit) draw();
+  };
+
+  const update = () => {
+    const loc = data.gps;
+    hit = loc && g ? lookupUnit(g, loc.lat, loc.lon) : null;
+    const cur = data[f.k];
+    if (hit && (!cur || (cur.source !== 'user' && cur.unit !== hit.unit))) return choose(hit.unit, 'map');
+    paint();
+  };
+  loadGeology().then((geo) => { g = geo; update(); }).catch(() => {
+    box.replaceChildren(h('p', { class: 'geo-note warn', text: 'The geology map is not available offline yet. Open the app once with signal.' }));
+  });
+  fieldEvents.addEventListener('change', (e) => { if (e.detail === 'gps' && g) update(); });
+  paint();
+  return box;
 }

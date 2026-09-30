@@ -14,6 +14,8 @@
 - Tap a section heading to open or close it. The number on the right shows fields filled / total.
 - On-paper "circle one" choices are buttons. Tap to select; tap again to clear.
 - **Sketch / Signature**: tap the box and draw with your finger. **Undo** and **Clear** are at the bottom. Tap **Done** to keep it.
+- **Location**: tap **Capture GPS** (outdoors, give it a few seconds). The location is recorded in **UTM (NAD83)**. No GPS signal? Tap **Enter UTM** and type the zone, easting and northing.
+- **Surficial Geology** fills itself in from the location. The app looks up the unit on OGS Map 2556 and inserts the standard sentence and the unit description. **Check the small map**: the pink cross is the site. Read the unit number printed on the map there. If it's different, pick the right unit under **Change unit…**. A yellow note means the site is near a unit boundary or shoreline. You can edit the text freely afterwards.
 - **Pumping test**: tap **+ Add reading (now)** for each reading. It stamps the time; type the water level. **Now** re-stamps a row.
 - **Done** returns to the list. If a required field (marked \*) is empty, you can keep the form as a draft.
 - **Word** creates this form's filled golden template right away, so you can preview it or send it on its own.

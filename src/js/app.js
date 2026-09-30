@@ -2,7 +2,7 @@
 
 import { FORMS, leafFields, visible } from './forms.js';
 import { db, newId, requestPersistence } from './db.js';
-import { h, renderField } from './fields.js';
+import { fieldEvents, h, renderField } from './fields.js';
 import {
   APP_VERSION, buildExport, canShareFiles, docxFile, downloadFiles, entryTitle, REPORT_CSS, reportBody, setLogoData, shareFiles,
 } from './export.js';
@@ -142,8 +142,9 @@ async function editorScreen({ id, formId }) {
 
   const conds = []; // [element, conditions] pairs re-checked on every change
   const counters = [];
-  const changed = () => {
+  const changed = (k) => {
     dirty = true;
+    if (k) fieldEvents.dispatchEvent(new CustomEvent('change', { detail: k }));
     savedLbl.textContent = 'Saving…';
     clearTimeout(timer);
     timer = setTimeout(save, 500);

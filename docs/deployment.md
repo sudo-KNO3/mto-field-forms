@@ -25,6 +25,18 @@ Phones pick up the new version the next time the app opens with signal. The serv
 3. Run `npm test`. It fails if any app field has no place in the Word template.
 4. Bump `CACHE` in `src/sw.js` so phones pick up the new template.
 
+## Rebuilding the geology data
+
+The geology lookup is built from two local files in the team's *Quaternary Geology* boilerplate folder: the Map 2556 PDF and *Quaternary Geology 260512 - DRAFT populated.docx*. After the descriptions document is updated, run:
+
+```sh
+pip install pymupdf opencv-python numpy scipy pyproj
+npm run geology      # or: python scripts/build_geology.py --pdf <path> --docx <path>
+npm test
+```
+
+Then bump `CACHE` in `src/sw.js` so phones download the new data. See [geology.md](geology.md).
+
 ## Local testing
 
 ```sh

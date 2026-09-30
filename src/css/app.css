@@ -157,8 +157,29 @@ body.noscroll { overflow: hidden; }
 .seg button.on { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
 
 .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.gps-out { flex: 1; font-size: 14px; color: var(--muted); }
-.gps-out a { color: var(--accent); }
+
+/* location, recorded in UTM */
+.utm-out { margin-bottom: 8px; }
+.utm-main { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.utm-main small { font-size: 13px; font-weight: 500; color: var(--muted); }
+.utm-sub { font-size: 13px; margin-top: 2px; }
+.utm-sub a { color: var(--accent); }
+.utm-manual { display: grid; grid-template-columns: 70px 1fr 1fr; gap: 8px; margin-top: 10px; }
+.utm-manual label { display: flex; flex-direction: column; gap: 4px; }
+.utm-manual small { color: var(--muted); font-size: 12px; }
+
+/* mapped surficial unit */
+.geo { display: flex; flex-direction: column; gap: 8px; }
+.geo p { margin: 0; }
+.geo-unit { display: flex; align-items: center; gap: 10px; }
+.geo-num { flex: none; min-width: 34px; height: 34px; padding: 0 6px; border-radius: 8px; display: grid; place-items: center; background: var(--ink); color: var(--bg); font-weight: 700; }
+.geo-legend { font-size: 14px; color: var(--muted); }
+.geo-note { font-size: 13px; padding: 8px 10px; border-radius: 8px; background: var(--field); }
+.geo-note.ok { color: var(--ok); }
+.geo-note.warn { color: var(--warn); }
+.geo-map { width: 100%; height: auto; aspect-ratio: 8 / 5; border-radius: 8px; border: 1px solid var(--line); background: #fff; }
+.geo-zoom .btn { min-width: 44px; font-size: 20px; }
+.geo-actions select { flex: 1; min-width: 0; min-height: var(--tap); border-radius: 10px; border: 1px solid var(--line); background: var(--field); color: var(--ink); font: inherit; font-size: 16px; padding: 0 10px; }
 
 .thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; margin-bottom: 8px; }
 .thumbs:empty { display: none; }

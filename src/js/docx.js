@@ -4,7 +4,7 @@
 // can be unit-tested in Node.
 
 import { FORMS, leafFields, visible } from './forms.js';
-import { fmtGps } from './fields.js';
+import { fmtUTM } from './geo.js';
 
 const EMU_PER_INCH = 914400;
 const MIN_READING_ROWS = 30; // blank rows printed on the paper Form 10 grid
@@ -30,7 +30,7 @@ function fieldValues(form, entry) {
     const f = fields[k];
     const v = get(k);
     if (v == null || v === '' || (Array.isArray(v) && !v.length)) return '';
-    if (f?.type === 'gps') return fmtGps(v);
+    if (f?.type === 'location') return fmtUTM(v);
     if (Array.isArray(v)) return v.join(', ');
     return String(v);
   };
@@ -139,7 +139,7 @@ export function fillDocument(template, entry) {
   let doc = template.parts['word/document.xml'].text;
 
   // 1. Pumping-test grid: repeat the tagged row once per reading (at least the paper's row count).
-  doc = doc.replace(/<w:tr>(?:(?!<\/w:tr>).)*?\{\{cell:(?:(?!<\/w:tr>).)*?<\/w:tr>/g, (row) => {
+  doc = doc.replace(/<w:tr>(?:(?!<\/?w:tr[ >]).)*?\{\{cell:(?:(?!<\/?w:tr[ >]).)*?<\/w:tr>/g, (row) => {
     const tables = [...new Set([...row.matchAll(/\{\{cell:(\w+):/g)].map((m) => m[1]))];
     const data = Object.fromEntries(tables.map((t) => [t, (get(t) || []).filter((r) => r.t || r.wl)]));
     const n = Math.max(MIN_READING_ROWS, ...Object.values(data).map((d) => d.length));
@@ -148,6 +148,19 @@ export function fillDocument(template, entry) {
       const v = data[table]?.[i]?.[col];
       return v ? textRuns(v, base) : '';
     })).join('');
+  });
+
+  // (Row patterns never cross another <w:tr>: some ruled tables are nested inside other tables.)
+  // 1b. Ruled free-text blocks: one line of text per ruled row, adding ruled rows when the text is
+  //     longer than the paper allows. Added rows keep the borders but drop other text (e.g. a label).
+  doc = doc.replace(/<w:tr[ >](?:(?!<\/?w:tr[ >]).)*?\{\{line:(\w+):(\d+):(\d+):(\d+)\}\}(?:(?!<\/?w:tr[ >]).)*?<\/w:tr>/g, (row, key, i, n, chars) => {
+    [i, n, chars] = [+i, +n, +chars];
+    const lines = wrap(text(key), chars);
+    while (lines.length && !lines[lines.length - 1]) lines.pop();
+    const fill = (r, line) => r.replace(TAG_RUN, (m, base = '') => (line ? textRuns(line, base) : ''));
+    if (i < n - 1 || lines.length <= n) return fill(row, lines[i] || '');
+    const blank = row.replace(/(<w:t(?: [^>]*)?>)(?!\{\{)[^<]*(<\/w:t>)/g, '$1$2');
+    return fill(row, lines[i]) + lines.slice(n).map((l) => fill(blank, l)).join('');
   });
 
   // 2. Sketch paragraph: the drawing, or the blank space the paper leaves for one.
@@ -176,13 +189,6 @@ export function fillDocument(template, entry) {
     if (kind === 'choice' || kind === 'check') {
       const chosen = [].concat(get(key) || []);
       return choiceRuns(fields[key].options, chosen, base, kind);
-    }
-    if (kind === 'line') {
-      const [i, n, chars] = rest.map(Number);
-      const lines = wrap(text(key), chars);
-      const mine = i < n - 1 ? lines.slice(i, i + 1) : lines.slice(i); // last ruled line takes any overflow
-      const v = mine.join('\n').trim();
-      return v ? textRuns(v, base) : '';
     }
     if (kind === 'image') {
       const url = get(key);
